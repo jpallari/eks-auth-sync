@@ -1,0 +1,7 @@
+*.pyc
+__pycache__
+*.egg-info
+.env/
+.mypy_cache/
+LICENSE
+Dockerfile
