@@ -1,6 +1,6 @@
 import unittest
 import yaml
-from mapping import MappingType, Mapping, to_aws_auth
+from eks_auth_sync.mapping import MappingType, Mapping, to_aws_auth
 
 
 class TestMappingType(unittest.TestCase):

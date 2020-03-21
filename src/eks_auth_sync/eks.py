@@ -2,8 +2,8 @@ import base64
 import boto3  # type: ignore
 import kubernetes  # type: ignore
 import tempfile
-import eks_auth
 import typing
+from eks_auth_sync import eks_auth
 
 
 def api_config(

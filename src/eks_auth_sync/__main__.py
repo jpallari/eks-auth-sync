@@ -3,12 +3,10 @@
 import yaml
 import argparse
 import boto3  # type: ignore
-import scanner
-import mapping
 import structlog  # type: ignore
-import eks
 import kubernetes  # type: ignore
-import k8s
+from eks_auth_sync import k8s, eks, mapping, scanner
+
 
 logger = structlog.get_logger()
 

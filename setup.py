@@ -20,7 +20,7 @@ setuptools.setup(
         "structlog==20.1.0",
     ],
     python_requires=">=3.6",
-    entry_points={"console_scripts": ["eks-auth-sync=main:main"]},
+    entry_points={"console_scripts": ["eks-auth-sync=eks_auth_sync.__main__:main"]},
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: Apache Software License",

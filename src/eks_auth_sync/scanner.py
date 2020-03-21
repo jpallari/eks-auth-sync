@@ -1,7 +1,7 @@
 import typing
 import boto3  # type: ignore
 import structlog  # type: ignore
-from mapping import MappingType, Mapping
+from eks_auth_sync.mapping import MappingType, Mapping
 
 logger = structlog.get_logger()
 
