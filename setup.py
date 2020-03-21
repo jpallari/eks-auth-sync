@@ -1,14 +1,17 @@
+"""
+Setuptools setup
+"""
 import setuptools
 
 with open("README.md") as fp:
-    long_description = fp.read()
+    LONG_DESCRIPTION = fp.read()
 
 setuptools.setup(
     name="eks-auth-sync",
     version="0.0.1",
     description="Synchronize users to AWS EKS",
     url="https://github.com/Lepovirta/eks-auth-sync",
-    long_description=long_description,
+    long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     author="Jaakko Pallari",
     package_dir={"": "src"},

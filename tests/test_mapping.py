@@ -1,3 +1,4 @@
+# pylint: disable=missing-docstring
 import unittest
 import yaml
 from eks_auth_sync.mapping import MappingType, Mapping, to_aws_auth
@@ -96,14 +97,14 @@ class TestMapping(unittest.TestCase):
         users = [d for _, d in self.aws_auth_cases if "userarn" in d]
         roles = [d for _, d in self.aws_auth_cases if "rolearn" in d]
 
-        cm = to_aws_auth(mappings)
-        name = cm.metadata["name"]
-        cmUsers = yaml.load(cm.data["mapUsers"], Loader=yaml.SafeLoader)
-        cmRoles = yaml.load(cm.data["mapRoles"], Loader=yaml.SafeLoader)
+        configmap = to_aws_auth(mappings)
+        name = configmap.metadata["name"]
+        cm_users = yaml.load(configmap.data["mapUsers"], Loader=yaml.SafeLoader)
+        cm_roles = yaml.load(configmap.data["mapRoles"], Loader=yaml.SafeLoader)
 
         self.assertEqual(name, "aws-auth")
-        self.assertEqual(cmUsers, users)
-        self.assertEqual(cmRoles, roles)
+        self.assertEqual(cm_users, users)
+        self.assertEqual(cm_roles, roles)
 
 
 if __name__ == "__main__":

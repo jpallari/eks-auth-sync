@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
+"""
+Entrypoint for the CLI utility.
+"""
 
-import yaml
 import argparse
+import yaml
 import boto3  # type: ignore
 import structlog  # type: ignore
 import kubernetes  # type: ignore
 from eks_auth_sync import k8s, eks, mapping, scanner
 
 
-logger = structlog.get_logger()
+_LOG = structlog.get_logger()
 
 
-def argparser() -> argparse.ArgumentParser:
+def _argparser() -> argparse.ArgumentParser:
     aparser = argparse.ArgumentParser(description="Update AWS auth in EKS cluster",)
     aparser.add_argument(
         "--cluster", dest="cluster", required=True, help="Cluster to update",
@@ -65,7 +68,7 @@ def argparser() -> argparse.ArgumentParser:
     return aparser
 
 
-def configure_logging(args) -> None:
+def _configure_logging(args) -> None:
     processors = [
         structlog.processors.TimeStamper(),
     ]
@@ -90,10 +93,10 @@ def configure_logging(args) -> None:
         logger_factory=structlog.PrintLoggerFactory(),
         cache_logger_on_first_use=False,
     )
-    logger.bind(cluster=args.cluster)
+    _LOG.bind(cluster=args.cluster)
 
 
-def k8s_client(session: boto3.Session, args) -> kubernetes.client.ApiClient:
+def _k8s_client(session: boto3.Session, args) -> kubernetes.client.ApiClient:
     if args.auth_with_aws:
         config = eks.api_config(
             session=session, cluster=args.cluster, role_arn=args.auth_role_arn,
@@ -107,25 +110,26 @@ def k8s_client(session: boto3.Session, args) -> kubernetes.client.ApiClient:
 
 
 def main() -> None:
-    args = argparser().parse_args()
-    configure_logging(args)
+    """ Entrypoint for the CLI utility """
+    args = _argparser().parse_args()
+    _configure_logging(args)
     session = boto3.Session(region_name=args.region_name)
 
-    s = scanner.Scanner(session, args.cluster)
+    scnr = scanner.Scanner(session, args.cluster)
     mappings = []
     if args.roles_path:
-        mappings.extend(s.from_iam_roles(args.roles_path))
+        mappings.extend(scnr.from_iam_roles(args.roles_path))
     if args.users_path:
-        mappings.extend(s.from_iam_users(args.users_path))
+        mappings.extend(scnr.from_iam_users(args.users_path))
 
-    cm = mapping.to_aws_auth(mappings)
+    configmap = mapping.to_aws_auth(mappings)
     if args.update:
         if not mappings and not args.allow_empty:
-            logger.info("no mappings found. skipping update.")
+            _LOG.info("no mappings found. skipping update.")
             return
-        client = k8s_client(session, args)
-        logger.info("updating aws-auth configmap")
-        k8s.update_aws_auth_cm(client, cm)
+        client = _k8s_client(session, args)
+        _LOG.info("updating aws-auth configmap")
+        k8s.update_aws_auth_configmap(client, configmap)
     else:
         print(yaml.dump([m.to_aws_auth_entry() for m in mappings]))
 

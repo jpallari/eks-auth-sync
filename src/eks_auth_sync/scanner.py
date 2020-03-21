@@ -1,19 +1,29 @@
+"""
+Scanner is used for scanning AWS APIs for EKS cluster users.
+"""
 import typing
 import boto3  # type: ignore
 import structlog  # type: ignore
 from eks_auth_sync.mapping import MappingType, Mapping
 
-logger = structlog.get_logger()
+_LOG = structlog.get_logger()
 
 
 class Scanner:
+    """
+    Scanner is used for scanning AWS APIs for EKS cluster users.
+
+    :param session: Boto3 session to use as a context for interacting with AWS
+    :param cluster: Name of the EKS cluster
+    """
+
     def __init__(self, session: boto3.Session, cluster: str) -> None:
         self._session = session
         self._sts_client = session.client("sts")
         self._iam_client = session.client("iam")
         self._account_id_v = ""
         self._cluster = cluster
-        self._logger = logger.new(cluster=cluster)
+        self._logger = _LOG.new(cluster=cluster)
 
     @property
     def _account_id(self) -> str:
@@ -23,6 +33,23 @@ class Scanner:
         return self._account_id_v
 
     def from_iam_roles(self, path_prefix: str) -> typing.List[Mapping]:
+        """
+        Scan IAM roles for Kubernetes user details.
+
+        :param path_prefix: Path prefix to use as a filter. Use "/" to scan all roles.
+        :returns: List of IAM role to K8s user mappings found.
+
+        Each IAM role is scanned for the following tags (`{cluster}` is replaced with the
+        cluster name):
+
+        * `eks/{cluster}/username`:
+          Username in the Kubernetes cluster.
+          This tag is required for the IAM role to be used in the cluster.
+        * `eks/{cluster}/groups`:
+          List of groups for the user in Kubernetes in comma-separated format.
+        * `eks/{cluster}/type`:
+          Type of the role. "user" = normal k8s user. "node" = a worker node user.
+        """
         self._logger.debug("fetching IAM roles", path_prefix=path_prefix)
         paginator = self._iam_client.get_paginator("list_roles")
         mappings: typing.List[Mapping] = []
@@ -34,6 +61,21 @@ class Scanner:
         return mappings
 
     def from_iam_users(self, path_prefix: str) -> typing.List[Mapping]:
+        """
+        Scan IAM users for Kubernetes user details.
+
+        :param path_prefix: Path prefix to use as a filter. Use "/" to scan all users.
+        :returns: List of IAM users to K8s user mappings found.
+
+        Each IAM user is scanned for the following tags (`{cluster}` is replaced with the
+        cluster name):
+
+        * `eks/{cluster}/username`:
+          Username in the Kubernetes cluster.
+          This tag is required for the IAM user to be used in the cluster.
+        * `eks/{cluster}/groups`:
+          List of groups for the user in Kubernetes in comma-separated format.
+        """
         self._logger.debug("fetching IAM users", path_prefix=path_prefix)
         paginator = self._iam_client.get_paginator("list_users")
         mappings: typing.List[Mapping] = []
@@ -108,10 +150,12 @@ class _Tags:
 
     @property
     def k8s_username(self) -> typing.Optional[str]:
+        """ Username in Kubernetes """
         return self._get("username")
 
     @property
     def k8s_groups(self) -> typing.List[str]:
+        """ List of groups for the user in Kubernetes """
         groups_str = self._get("groups")
         if groups_str:
             return groups_str.split(",")
@@ -119,7 +163,8 @@ class _Tags:
 
     @property
     def mapping_type(self) -> typing.Optional[MappingType]:
-        role_type = self._get("type")
+        """ What the AWS role is mapped to in Kubernetes """
+        role_type = self._get("type") or "user"
         if role_type == "user":
             return MappingType.RoleToUser
         if role_type == "node":
