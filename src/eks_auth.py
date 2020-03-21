@@ -10,6 +10,20 @@
 # distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF
 # ANY KIND, either express or implied. See the License for the specific
 # language governing permissions and limitations under the License.
+
+# =========================
+# Code copied from AWS CLI:
+# https://github.com/aws/aws-cli/blob/eb3a253b2830f5e13046aa2ef996bddc2d8e2ed9/awscli/customizations/eks/get_token.py
+#
+# Changes made:
+# * Removed the `GetTokenCommand` class, and the unused code.
+# * Removed the region parameter.
+# * Added `get_token` function which uses the rest of the code.
+# * Made `TokenGenerator` and `_STSClientFactory` private.
+# * Replaced the session parameter with a `boto3.Session`
+#
+# =========================
+
 import typing
 import base64
 import boto3  # type: ignore
