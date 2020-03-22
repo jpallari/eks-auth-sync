@@ -9,13 +9,16 @@ jobs:
     steps:
     - checkout
     - run:
+        name: Set local PATH
+        command: |
+          echo "export PATH=\"$HOME/.local/bin:$PATH\"" >> "$BASH_ENV"
+    - run:
         name: Install APT dependencies
         command: |
           sudo apt-get update
           sudo apt-get install -y python-dev libsasl2-dev gcc
     - python/load-cache
-    - python/install-deps:
-        local: false
+    - python/install-deps
     - python/save-cache
     - run:
         name: Test
