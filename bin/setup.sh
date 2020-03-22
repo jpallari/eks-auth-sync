@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
-PROJECT_ROOT="$(dirname "$0")/.."
+cd "$(dirname "$0")/.."
 
 # Prepare virtualenv
-if [ ! -f "$PROJECT_ROOT/.env/bin/activate" ]; then
-    python3 -m venv "$PROJECT_ROOT/.env"
+if [ ! -f ".env/bin/activate" ]; then
+    python3 -m venv .env
 fi
-. "$PROJECT_ROOT/.env/bin/activate"
+. ".env/bin/activate"
 
 # Install dependencies
 set -x

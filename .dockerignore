@@ -4,5 +4,6 @@ __pycache__
 .env/
 .mypy_cache/
 .eggs/
+.coverage
 LICENSE
 Dockerfile
