@@ -22,13 +22,13 @@ class Scanner:
         self._iam_client = session.client("iam")
         self._account_id_v = ""
         self._cluster = cluster
-        self._logger = _LOG.new(cluster=cluster)
+        self._log = _LOG.new(cluster=cluster)
 
     @property
     def _account_id(self) -> str:
         if not self._account_id_v:
             self._account_id_v = self._sts_client.get_caller_identity()["Account"]
-            self._logger.debug("found AWS account ID", account_id=self._account_id_v)
+            self._log.debug("found AWS account ID", account_id=self._account_id_v)
         return self._account_id_v
 
     def from_iam_roles(self, path_prefix: str) -> typing.List[Mapping]:
@@ -49,7 +49,7 @@ class Scanner:
         * `eks/{cluster}/type`:
           Type of the role. "user" = normal k8s user. "node" = a worker node user.
         """
-        self._logger.debug("fetching IAM roles", path_prefix=path_prefix)
+        self._log.info("fetching IAM roles", path_prefix=path_prefix)
         paginator = self._iam_client.get_paginator("list_roles")
         mappings: typing.List[Mapping] = []
         for roles in paginator.paginate(PathPrefix=path_prefix):
@@ -75,7 +75,7 @@ class Scanner:
         * `eks/{cluster}/groups`:
           List of groups for the user in Kubernetes in comma-separated format.
         """
-        self._logger.debug("fetching IAM users", path_prefix=path_prefix)
+        self._log.info("fetching IAM users", path_prefix=path_prefix)
         paginator = self._iam_client.get_paginator("list_users")
         mappings: typing.List[Mapping] = []
         for users in paginator.paginate(PathPrefix=path_prefix):
@@ -89,7 +89,7 @@ class Scanner:
         username = user["UserName"]
         arn = f"arn:aws:iam::{self._account_id}:user/{username}"
         tags = _Tags(
-            logger=self._logger,
+            log=self._log,
             tags=self._iam_client.list_user_tags(UserName=username, MaxItems=100).get(
                 "Tags", []
             ),
@@ -100,18 +100,20 @@ class Scanner:
         if not k8s_username:
             return None
 
-        return Mapping(
+        mapping = Mapping(
             arn=arn,
             mapping_type=MappingType.UserToUser,
             username=k8s_username,
             groups=tags.k8s_groups,
         )
+        self._log.debug("found user mapping", mapping=mapping._asdict())
+        return mapping
 
     def _role_to_mappings(self, role: dict) -> typing.Optional[Mapping]:
         rolename = role["RoleName"]
         arn = f"arn:aws:iam::{self._account_id}:role/{rolename}"
         tags = _Tags(
-            logger=self._logger,
+            log=self._log,
             tags=self._iam_client.list_role_tags(RoleName=rolename, MaxItems=100,).get(
                 "Tags", []
             ),
@@ -121,20 +123,24 @@ class Scanner:
         mapping_type = tags.mapping_type
         k8s_username = tags.k8s_username
         if mapping_type == MappingType.RoleToNode:
-            return Mapping(arn=arn, mapping_type=mapping_type, username="", groups=[],)
+            mapping = Mapping(
+                arn=arn, mapping_type=mapping_type, username="", groups=[],
+            )
         if mapping_type == MappingType.RoleToUser and k8s_username:
-            return Mapping(
+            mapping = Mapping(
                 arn=arn,
                 mapping_type=mapping_type,
                 username=k8s_username,
                 groups=tags.k8s_groups,
             )
-        return None
+        if mapping:
+            self._log.debug("found role mapping", mapping=mapping._asdict())
+        return mapping
 
 
 class _Tags:
-    def __init__(self, logger, tags: list, cluster: str) -> None:
-        self._logger = logger
+    def __init__(self, log, tags: list, cluster: str) -> None:
+        self._log = log
         self._cluster = cluster
         self._ts = {tag["Key"]: tag["Value"] for tag in tags}
 
@@ -162,5 +168,5 @@ class _Tags:
             return MappingType.RoleToUser
         if role_type == "node":
             return MappingType.RoleToNode
-        self._logger.debug("invalid role type", role_type=role_type)
+        self._log.debug("invalid role type", role_type=role_type)
         return None

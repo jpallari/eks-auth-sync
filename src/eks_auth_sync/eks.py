@@ -6,7 +6,10 @@ import typing
 import base64
 import boto3  # type: ignore
 import kubernetes  # type: ignore
+import structlog  # type: ignore
 from eks_auth_sync import _eks_auth
+
+_LOG = structlog.get_logger()
 
 
 def api_config(
@@ -23,24 +26,28 @@ def api_config(
     Note that this will write the cluster CA to a temporary file,
     because that's the only way it can be provided to the Kubernetes client.
     """
+    log = _LOG.new(cluster=cluster)
     eks_client = session.client("eks")
+    log.debug("fetching cluster details")
     eks_details = eks_client.describe_cluster(name=cluster)["cluster"]
     endpoint = eks_details["endpoint"]
     ca_data = eks_details["certificateAuthority"]["data"]
 
     conf = kubernetes.client.Configuration()
     conf.host = endpoint
+    log.debug("fetching auth token", role_arn=role_arn)
     conf.api_key["authorization"] = _eks_auth.get_token(
         session=session, cluster=cluster, role_arn=role_arn,
     )
     conf.api_key_prefix["authorization"] = "Bearer"
-    conf.ssl_ca_cert = _save_eks_ca_cert(ca_data)
+    conf.ssl_ca_cert = _save_eks_ca_cert(log, ca_data)
     return conf
 
 
-def _save_eks_ca_cert(ca_cert_b64: str) -> str:
+def _save_eks_ca_cert(log, ca_cert_b64: str) -> str:
     ca_cert_file = tempfile.NamedTemporaryFile(delete=False)
     cert_bs = base64.urlsafe_b64decode(ca_cert_b64.encode("utf-8"))
     ca_cert_file.write(cert_bs)
     ca_cert_file.close()
+    log.debug("wrote EKS CA cert", filename=ca_cert_file.name)
     return ca_cert_file.name
