@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 PROJECT_ROOT="$(dirname "$0")/.."
+. "$PROJECT_ROOT/.env/bin/activate"
 
 # Run tests etc.
 set -x

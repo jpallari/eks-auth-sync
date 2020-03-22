@@ -1,21 +1,29 @@
 version: 2.1
 
-orbs:
-  python: circleci/python@0.2.1
-
 jobs:
   build-and-test:
-    executor: python/default
+    docker:
+    - image: circleci/python:3.7
+    - image: localstack/localstack
+      environment:
+        SERVICES: iam,sts
     steps:
     - checkout
     - run:
         name: Install APT dependencies
         command: |
           sudo apt-get update
-          sudo apt-get install -y python-dev libsasl2-dev gcc npm
-    - python/load-cache
-    - python/install-deps
-    - python/save-cache
+          sudo apt-get install -y python-dev libsasl2-dev gcc
+    - restore_cache:
+        keys:
+        - pip-{{ checksum "requirements.txt" }}
+    - run:
+        name: Install PIP dependencies
+        command: ./bin/setup.sh
+    - save_cache:
+        key: pip-{{ checksum "requirements.txt" }}
+        paths:
+        - ./.env/lib/
     - run:
         name: Test
         command: ./bin/test.sh

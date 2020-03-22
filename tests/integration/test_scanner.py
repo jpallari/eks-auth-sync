@@ -1,6 +1,5 @@
 # pylint: disable=missing-docstring,invalid-name
 import unittest
-from localstack.services import infra
 import localstack_client.session
 from eks_auth_sync import scanner
 from eks_auth_sync.mapping import Mapping, MappingType
@@ -156,7 +155,6 @@ def create_node_role(
 
 
 def setUpModule():
-    infra.start_infra(asynchronous=True)
     create_user(
         path="/", cluster="", username="pasi", k8s_username="", k8s_groups=[],
     )
@@ -205,7 +203,3 @@ def setUpModule():
     create_node_role(
         path="/", cluster="production", rolename="default-eks-node",
     )
-
-
-def tearDownModule():
-    infra.stop_infra()
