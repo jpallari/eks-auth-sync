@@ -1,12 +1,15 @@
 # pylint: disable=missing-docstring,invalid-name
 import unittest
 import localstack_client.session
+import botocore
+import structlog
 from eks_auth_sync import scanner
 from eks_auth_sync.mapping import Mapping, MappingType
 
 ACCOUNT_ID = "123456789012"
 SESSION = localstack_client.session.Session()
 IAM_CLIENT = SESSION.client("iam")
+LOG = structlog.get_logger()
 
 
 # Unfortunately, local stack returns all users regardless of which path prefix is used,
@@ -98,7 +101,13 @@ def create_user(
             {"Key": f"eks/{cluster}/username", "Value": k8s_username},
             {"Key": f"eks/{cluster}/groups", "Value": ",".join(k8s_groups)},
         ]
-    IAM_CLIENT.create_user(Path=path, UserName=username, Tags=tags)
+    try:
+        IAM_CLIENT.create_user(Path=path, UserName=username, Tags=tags)
+    except botocore.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] == "EntityAlreadyExists":
+            LOG.error("user already exists", username=username)
+        else:
+            raise e
 
 
 def create_user_role(
@@ -122,12 +131,18 @@ def create_user_role(
     """
         % ACCOUNT_ID
     )
-    IAM_CLIENT.create_role(
-        Path=path,
-        RoleName=rolename,
-        Tags=tags,
-        AssumeRolePolicyDocument=assume_role_policy_document,
-    )
+    try:
+        IAM_CLIENT.create_role(
+            Path=path,
+            RoleName=rolename,
+            Tags=tags,
+            AssumeRolePolicyDocument=assume_role_policy_document,
+        )
+    except botocore.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] == "EntityAlreadyExists":
+            LOG.error("role already exists", rolename=rolename)
+        else:
+            raise e
 
 
 def create_node_role(
@@ -146,12 +161,18 @@ def create_node_role(
         }
     }
     """
-    IAM_CLIENT.create_role(
-        Path=path,
-        RoleName=rolename,
-        Tags=tags,
-        AssumeRolePolicyDocument=assume_role_policy_document,
-    )
+    try:
+        IAM_CLIENT.create_role(
+            Path=path,
+            RoleName=rolename,
+            Tags=tags,
+            AssumeRolePolicyDocument=assume_role_policy_document,
+        )
+    except botocore.exceptions.ClientError as e:
+        if e.response["Error"]["Code"] == "EntityAlreadyExists":
+            LOG.error("role already exists", rolename=rolename)
+        else:
+            raise e
 
 
 def setUpModule():
@@ -203,3 +224,12 @@ def setUpModule():
     create_node_role(
         path="/", cluster="production", rolename="default-eks-node",
     )
+
+
+def tearDownModule():
+    users = ["pasi", "seppo", "matti", "teppo"]
+    roles = ["testing-developers", "developers", "admins", "default-eks-node"]
+    for user in users:
+        IAM_CLIENT.delete_user(UserName=user)
+    for role in roles:
+        IAM_CLIENT.delete_role(RoleName=role)
