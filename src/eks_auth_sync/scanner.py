@@ -18,7 +18,6 @@ class Scanner:
     """
 
     def __init__(self, session: boto3.Session, cluster: str) -> None:
-        self._session = session
         self._sts_client = session.client("sts")
         self._iam_client = session.client("iam")
         self._account_id_v = ""
@@ -90,6 +89,7 @@ class Scanner:
         username = user["UserName"]
         arn = f"arn:aws:iam::{self._account_id}:user/{username}"
         tags = _Tags(
+            logger=self._logger,
             tags=self._iam_client.list_user_tags(UserName=username, MaxItems=100).get(
                 "Tags", []
             ),
@@ -111,6 +111,7 @@ class Scanner:
         rolename = role["RoleName"]
         arn = f"arn:aws:iam::{self._account_id}:role/{rolename}"
         tags = _Tags(
+            logger=self._logger,
             tags=self._iam_client.list_role_tags(RoleName=rolename, MaxItems=100,).get(
                 "Tags", []
             ),
@@ -118,18 +119,17 @@ class Scanner:
         )
 
         mapping_type = tags.mapping_type
-        if not mapping_type:
-            return None
         k8s_username = tags.k8s_username
-        if not k8s_username:
-            return None
-
-        return Mapping(
-            arn=arn,
-            mapping_type=mapping_type,
-            username=k8s_username,
-            groups=tags.k8s_groups,
-        )
+        if mapping_type == MappingType.RoleToNode:
+            return Mapping(arn=arn, mapping_type=mapping_type, username="", groups=[],)
+        if mapping_type == MappingType.RoleToUser and k8s_username:
+            return Mapping(
+                arn=arn,
+                mapping_type=mapping_type,
+                username=k8s_username,
+                groups=tags.k8s_groups,
+            )
+        return None
 
 
 def _role_type_to_mapping_type(role_type: str) -> typing.Optional[MappingType]:
@@ -141,7 +141,8 @@ def _role_type_to_mapping_type(role_type: str) -> typing.Optional[MappingType]:
 
 
 class _Tags:
-    def __init__(self, tags: list, cluster: str) -> None:
+    def __init__(self, logger, tags: list, cluster: str) -> None:
+        self._logger = logger
         self._cluster = cluster
         self._ts = {tag["Key"]: tag["Value"] for tag in tags}
 
@@ -169,4 +170,5 @@ class _Tags:
             return MappingType.RoleToUser
         if role_type == "node":
             return MappingType.RoleToNode
+        self._logger.debug("invalid role type", role_type=role_type)
         return None

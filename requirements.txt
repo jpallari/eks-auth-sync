@@ -3,3 +3,4 @@ pytest
 black
 mypy
 pylint
+localstack[full]==0.10.8

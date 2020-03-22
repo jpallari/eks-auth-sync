@@ -115,7 +115,7 @@ def main() -> None:
     _configure_logging(args)
     session = boto3.Session(region_name=args.region_name)
 
-    scnr = scanner.Scanner(session, args.cluster)
+    scnr = scanner.Scanner(session=session, cluster=args.cluster)
     mappings = []
     if args.roles_path:
         mappings.extend(scnr.from_iam_roles(args.roles_path))
