@@ -12,7 +12,7 @@ jobs:
         name: Install APT dependencies
         command: |
           sudo apt-get update
-          sudo apt-get install -y python-dev libsasl2-dev gcc
+          sudo apt-get install -y python-dev libsasl2-dev gcc npm
     - python/load-cache
     - python/install-deps
     - python/save-cache
