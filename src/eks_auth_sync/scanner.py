@@ -55,8 +55,8 @@ class Scanner:
         for roles in paginator.paginate(PathPrefix=path_prefix):
             for role in roles.get("Roles", []):
                 mapping = self._role_to_mappings(role)
-                self._log.debug("found role mapping", mapping=mapping._asdict())
                 if mapping:
+                    self._log.debug("found role mapping", mapping=mapping._asdict())
                     mappings.append(mapping)
         return mappings
 
@@ -82,8 +82,8 @@ class Scanner:
         for users in paginator.paginate(PathPrefix=path_prefix):
             for user in users.get("Users", []):
                 mapping = self._user_to_mappings(user)
-                self._log.debug("found user mapping", mapping=mapping._asdict())
                 if mapping:
+                    self._log.debug("found user mapping", mapping=mapping._asdict())
                     mappings.append(mapping)
         return mappings
 
