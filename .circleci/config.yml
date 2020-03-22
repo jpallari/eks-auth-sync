@@ -10,7 +10,9 @@ jobs:
     - checkout
     - run:
         name: Install APT dependencies
-        command: apt-get install python-dev libsasl2-dev gcc
+        command: |
+          sudo apt-get update
+          sudo apt-get install -y python-dev libsasl2-dev gcc
     - python/load-cache
     - python/install-deps
     - python/save-cache
