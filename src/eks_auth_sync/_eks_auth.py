@@ -101,11 +101,11 @@ def _register_cluster_name_handlers(sts_client):
     )
 
 
-def _retrieve_cluster_name(self, params, context, **kwargs):
+def _retrieve_cluster_name(params, context, **kwargs):
     if "ClusterName" in params:
         context["eks_cluster"] = params.pop("ClusterName")
 
 
-def _inject_cluster_name_header(self, request, **kwargs):
+def _inject_cluster_name_header(request, **kwargs):
     if "eks_cluster" in request.context:
         request.headers[CLUSTER_NAME_HEADER] = request.context["eks_cluster"]
