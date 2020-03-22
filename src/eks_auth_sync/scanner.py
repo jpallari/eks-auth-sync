@@ -132,14 +132,6 @@ class Scanner:
         return None
 
 
-def _role_type_to_mapping_type(role_type: str) -> typing.Optional[MappingType]:
-    if role_type == "user":
-        return MappingType.RoleToUser
-    if role_type == "node":
-        return MappingType.RoleToNode
-    return None
-
-
 class _Tags:
     def __init__(self, logger, tags: list, cluster: str) -> None:
         self._logger = logger
