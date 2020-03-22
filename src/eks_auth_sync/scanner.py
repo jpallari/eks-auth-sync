@@ -55,6 +55,7 @@ class Scanner:
         for roles in paginator.paginate(PathPrefix=path_prefix):
             for role in roles.get("Roles", []):
                 mapping = self._role_to_mappings(role)
+                self._log.debug("found role mapping", mapping=mapping._asdict())
                 if mapping:
                     mappings.append(mapping)
         return mappings
@@ -81,6 +82,7 @@ class Scanner:
         for users in paginator.paginate(PathPrefix=path_prefix):
             for user in users.get("Users", []):
                 mapping = self._user_to_mappings(user)
+                self._log.debug("found user mapping", mapping=mapping._asdict())
                 if mapping:
                     mappings.append(mapping)
         return mappings
@@ -100,14 +102,12 @@ class Scanner:
         if not k8s_username:
             return None
 
-        mapping = Mapping(
+        return Mapping(
             arn=arn,
             mapping_type=MappingType.UserToUser,
             username=k8s_username,
             groups=tags.k8s_groups,
         )
-        self._log.debug("found user mapping", mapping=mapping._asdict())
-        return mapping
 
     def _role_to_mappings(self, role: dict) -> typing.Optional[Mapping]:
         rolename = role["RoleName"]
@@ -123,19 +123,15 @@ class Scanner:
         mapping_type = tags.mapping_type
         k8s_username = tags.k8s_username
         if mapping_type == MappingType.RoleToNode:
-            mapping = Mapping(
-                arn=arn, mapping_type=mapping_type, username="", groups=[],
-            )
+            return Mapping(arn=arn, mapping_type=mapping_type, username="", groups=[],)
         if mapping_type == MappingType.RoleToUser and k8s_username:
-            mapping = Mapping(
+            return Mapping(
                 arn=arn,
                 mapping_type=mapping_type,
                 username=k8s_username,
                 groups=tags.k8s_groups,
             )
-        if mapping:
-            self._log.debug("found role mapping", mapping=mapping._asdict())
-        return mapping
+        return None
 
 
 class _Tags:
