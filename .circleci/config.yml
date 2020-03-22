@@ -7,19 +7,22 @@ jobs:
   build-and-test:
     executor: python/default
     steps:
-      - checkout
-      - python/load-cache
-      - python/install-deps
-      - python/save-cache
-      - run:
-          name: Test
-          command: ./bin/test.sh
+    - checkout
+    - run:
+        name: Install APT dependencies
+        command: apt-get install python-dev libsasl2-dev gcc
+    - python/load-cache
+    - python/install-deps
+    - python/save-cache
+    - run:
+        name: Test
+        command: ./bin/test.sh
 
 workflows:
   version: 2
   main:
     jobs:
-      - build-and-test:
-          filters:
-            branches:
-              only: /.*/
+    - build-and-test:
+        filters:
+          branches:
+            only: /.*/
