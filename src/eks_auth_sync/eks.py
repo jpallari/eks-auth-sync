@@ -6,7 +6,7 @@ import typing
 import base64
 import boto3  # type: ignore
 import kubernetes  # type: ignore
-from eks_auth_sync import eks_auth
+from eks_auth_sync import _eks_auth
 
 
 def api_config(
@@ -30,7 +30,7 @@ def api_config(
 
     conf = kubernetes.client.Configuration()
     conf.host = endpoint
-    conf.api_key["authorization"] = eks_auth.get_token(
+    conf.api_key["authorization"] = _eks_auth.get_token(
         session=session, cluster=cluster, role_arn=role_arn,
     )
     conf.api_key_prefix["authorization"] = "Bearer"
