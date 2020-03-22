@@ -3,7 +3,7 @@ set -euo pipefail
 PROJECT_ROOT="$(dirname "$0")/.."
 
 # Prepare virtualenv
-if [ -d "$PROJECT_ROOT/.env" ]; then
+if [ ! -f "$PROJECT_ROOT/.env/bin/activate" ]; then
     python3 -m venv "$PROJECT_ROOT/.env"
 fi
 . "$PROJECT_ROOT/.env/bin/activate"
