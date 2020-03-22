@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 set -euo pipefail
 PROJECT_ROOT="$(dirname "$0")/.."
 
