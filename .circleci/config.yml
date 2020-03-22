@@ -9,10 +9,6 @@ jobs:
     steps:
     - checkout
     - run:
-        name: Set local PATH
-        command: |
-          echo "export PATH=\"$HOME/.local/bin:$PATH\"" >> "$BASH_ENV"
-    - run:
         name: Install APT dependencies
         command: |
           sudo apt-get update
