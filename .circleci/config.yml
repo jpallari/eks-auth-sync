@@ -29,7 +29,9 @@ jobs:
         command: ./bin/test.sh
     - run:
         name: Upload coverage
-        command: python3 -m codecov
+        command: |
+          . .env/bin/activate
+          python3 -m codecov
 
 workflows:
   version: 2
